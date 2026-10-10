@@ -8,3 +8,5 @@ __pycache__/
 .aws/
 *.log
 .streamlit/secrets.toml
+work/test-deps/
+work/pip-temp/
