@@ -1,0 +1,23 @@
+{
+  "applications": {
+    "VNSP": {
+      "description": "VNSP enterprise connectivity services",
+      "services": [
+        {
+          "name": "VNSP API / gateway",
+          "role": "Entry point; replace with the actual service name",
+          "environment": "configure me",
+          "regions": [],
+          "log_groups": []
+        },
+        {
+          "name": "VNSP orchestration service",
+          "role": "Workflow orchestration; replace with the actual service name",
+          "environment": "configure me",
+          "regions": [],
+          "log_groups": []
+        }
+      ]
+    }
+  }
+}
