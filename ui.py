@@ -176,10 +176,10 @@ def _render_dashboard() -> None:
                 margin-bottom: 1.5rem; box-shadow: 0 12px 30px rgba(18, 41, 61, .14); }
         .hero-kicker { color: #ffd166; font-size: .72rem; font-weight: 800;
                        letter-spacing: .15em; margin: 0 0 .45rem 0; }
-        .hero h1.hero-title { display: block; color: #ffffff !important;
+        #troubleshooter-title { display: block; color: #ffffff !important;
                       -webkit-text-fill-color: #ffffff; font-size: clamp(2.15rem, 4vw, 3rem);
-                      font-weight: 800; line-height: 1.12; letter-spacing: -0.035em;
-                      font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
+                      font-weight: 700; line-height: 1.12; letter-spacing: -0.025em;
+                      font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif;
                       margin: .15rem 0 .35rem; text-shadow: 0 2px 12px rgba(0, 0, 0, .28); }
         .hero-copy { color: #d2e2eb; font-size: 1rem; margin: .6rem 0 0 0; }
         [data-testid="stSidebar"] { background: #efedf4; border-right: 1px solid #ddd7e7; }
@@ -205,7 +205,7 @@ def _render_dashboard() -> None:
         @media (max-width: 700px) {
             .block-container { padding-top: 1rem; }
             .hero { padding: 1.3rem; }
-            .hero-title { font-size: 2rem; }
+            #troubleshooter-title { font-size: 2rem; }
         }
         </style>
         """,
@@ -216,7 +216,7 @@ def _render_dashboard() -> None:
         """
         <header class="hero">
           <p class="hero-kicker">LOCAL OPERATIONS DEMO</p>
-          <h1 class="hero-title">VNSP Intelligent Troubleshooter</h1>
+          <h1 id="troubleshooter-title" class="hero-title">VNSP Intelligent Troubleshooter</h1>
           <p class="hero-copy">Review simulated service incidents, likely causes, and the log evidence behind each diagnosis.</p>
         </header>
         """,
