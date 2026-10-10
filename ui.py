@@ -167,23 +167,43 @@ def _render_dashboard() -> None:
         """
         <style>
         :root { color-scheme: light; }
-        .stApp { background: #f4f7fb; color: #172b4d; }
-        .block-container { max-width: 1440px; padding-top: 1.8rem; padding-bottom: 3rem; }
-        h1, h2, h3 { color: #142b4a; letter-spacing: -0.02em; }
-        .hero { background: #ffffff; border: 1px solid #dce4ef; border-radius: 14px;
-                padding: 1.35rem 1.6rem; margin-bottom: 1rem; }
-        .hero-kicker { color: #2563a6; font-size: .72rem; font-weight: 700;
-                       letter-spacing: .12em; margin: 0 0 .35rem 0; }
-        .hero-title { color: #142b4a; font-size: 1.8rem; font-weight: 700;
+        .stApp { background: #f3f6fa; color: #1c2e42; }
+        .block-container { max-width: 1440px; padding-top: 1.5rem; padding-bottom: 3rem; }
+        h1, h2, h3 { color: #14283f; letter-spacing: -0.025em; }
+        h2 { margin-top: 1.15rem; }
+        .hero { background: linear-gradient(118deg, #11263d 0%, #17435a 65%, #087e82 100%);
+                border: 1px solid #173c54; border-radius: 18px; padding: 1.7rem 1.9rem;
+                margin-bottom: 1.5rem; box-shadow: 0 12px 30px rgba(18, 41, 61, .14); }
+        .hero-kicker { color: #8be3d2; font-size: .72rem; font-weight: 800;
+                       letter-spacing: .15em; margin: 0 0 .45rem 0; }
+        .hero-title { color: #ffffff; font-size: 2rem; font-weight: 750;
                       line-height: 1.2; margin: 0; }
-        .hero-copy { color: #52647a; font-size: .98rem; margin: .55rem 0 0 0; }
-        [data-testid="stMetric"] { background: #ffffff; border: 1px solid #dce4ef;
-            border-radius: 12px; padding: .9rem 1rem; }
-        [data-testid="stMetricLabel"] { color: #52647a; }
-        [data-testid="stMetricValue"] { color: #142b4a; }
-        .section-note { color: #52647a; font-size: .9rem; margin-top: -.5rem; }
-        div.stButton > button[kind="primary"] { background: #1769aa; border-color: #1769aa; }
-        div.stButton > button[kind="primary"]:hover { background: #10578f; border-color: #10578f; }
+        .hero-copy { color: #d2e2eb; font-size: 1rem; margin: .6rem 0 0 0; }
+        [data-testid="stSidebar"] { background: #e8eef4; border-right: 1px solid #d5dfe8; }
+        [data-testid="stMetric"] { background: #ffffff; border: 1px solid #d9e2ea;
+            border-top: 3px solid #18a999; border-radius: 12px; padding: .9rem 1rem;
+            box-shadow: 0 4px 14px rgba(23, 48, 70, .04); }
+        [data-testid="stMetricLabel"] { color: #52677a; }
+        [data-testid="stMetricValue"] { color: #14283f; }
+        [data-testid="stForm"] { background: #ffffff; border: 1px solid #d9e2ea;
+            border-radius: 16px; padding: 1.2rem 1.3rem 1rem; box-shadow: 0 8px 24px rgba(23, 48, 70, .06); }
+        [data-testid="stWidgetLabel"] p { color: #273e54; font-weight: 600; }
+        [data-baseweb="input"] > div, [data-baseweb="select"] > div,
+        [data-baseweb="textarea"] { background: #fbfdff; border-color: #cbd8e3; border-radius: 9px; }
+        [data-baseweb="input"]:focus-within > div, [data-baseweb="select"]:focus-within > div,
+        [data-baseweb="textarea"]:focus-within { border-color: #109b91; box-shadow: 0 0 0 1px #109b91; }
+        [data-testid="stExpander"] { background: #f6f9fb; border: 1px solid #d9e2ea; border-radius: 10px; }
+        .section-note { color: #52677a; font-size: .9rem; margin-top: -.5rem; }
+        div.stButton > button[kind="primary"] { background: #087e82; border: 1px solid #087e82;
+            border-radius: 9px; color: #ffffff; font-weight: 700; min-height: 2.7rem; }
+        div.stButton > button[kind="primary"]:hover { background: #06696e; border-color: #06696e; }
+        div.stButton > button:focus { box-shadow: 0 0 0 3px rgba(24, 169, 153, .25); }
+        [data-testid="stAlert"] { border-radius: 10px; }
+        @media (max-width: 700px) {
+            .block-container { padding-top: 1rem; }
+            .hero { padding: 1.3rem; }
+            .hero-title { font-size: 1.55rem; }
+        }
         </style>
         """,
         unsafe_allow_html=True,
