@@ -1,6 +1,8 @@
 # VNSP Troubleshooter Dashboard
 
-The Streamlit dashboard in `ui.py` calls the existing local FastAPI backend. It displays only the fabricated scenarios and logs served by that API; it does not query AWS or other infrastructure.
+The Streamlit dashboard in `ui.py` includes an incident intake form for Application Name, Action Name, and a complete error log message. Its collapsed Advanced options section accepts service/component, environment, request/correlation ID, and event time. It gives an initial, local heuristic assessment from the action and supplied log text, then offers the existing fabricated-scenario workflow through the FastAPI backend. The intake form does not send messages to the API or query AWS.
+
+Application Name choices come from `config/services.json`. The Action Name and Full Error Log Message are combined for the initial assessment, and the complete submitted message can be expanded in the results. Remove secrets and personal data before entering log content.
 
 ## API address
 
