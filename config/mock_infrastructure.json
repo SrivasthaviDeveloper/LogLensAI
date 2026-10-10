@@ -1,0 +1,111 @@
+{
+  "application_name": "VNSP",
+  "servers": [
+    {
+      "server_id": "app-server-01",
+      "display_name": "Application Simulation Node 01",
+      "host": "app-server-01.example.invalid",
+      "port": 8080,
+      "health_check": "/_simulation/health/app-server-01",
+      "services": [
+        {
+          "name": "api-gateway",
+          "host": "api-gateway.app-server-01.example.invalid",
+          "port": 8080,
+          "log_file": "app-server-01/api-gateway.jsonl",
+          "dependencies": ["auth-service", "circuit-service", "payment-service", "notification-service"],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/api-gateway"
+        },
+        {
+          "name": "auth-service",
+          "host": "auth-service.app-server-01.example.invalid",
+          "port": 8081,
+          "log_file": "app-server-01/auth-service.jsonl",
+          "dependencies": [],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/auth-service"
+        }
+      ]
+    },
+    {
+      "server_id": "app-server-02",
+      "display_name": "Application Simulation Node 02",
+      "host": "app-server-02.example.invalid",
+      "port": 8080,
+      "health_check": "/_simulation/health/app-server-02",
+      "services": [
+        {
+          "name": "payment-service",
+          "host": "payment-service.app-server-02.example.invalid",
+          "port": 8082,
+          "log_file": "app-server-02/payment-service.jsonl",
+          "dependencies": ["database-service", "notification-service"],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/payment-service"
+        },
+        {
+          "name": "notification-service",
+          "host": "notification-service.app-server-02.example.invalid",
+          "port": 8083,
+          "log_file": "app-server-02/notification-service.jsonl",
+          "dependencies": [],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/notification-service"
+        }
+      ]
+    },
+    {
+      "server_id": "backend-server-01",
+      "display_name": "Backend Simulation Node 01",
+      "host": "backend-server-01.example.invalid",
+      "port": 8090,
+      "health_check": "/_simulation/health/backend-server-01",
+      "services": [
+        {
+          "name": "circuit-service",
+          "host": "circuit-service.backend-server-01.example.invalid",
+          "port": 8090,
+          "log_file": "backend-server-01/circuit-service.jsonl",
+          "dependencies": ["redis-cache"],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/circuit-service"
+        }
+      ]
+    },
+    {
+      "server_id": "data-server-01",
+      "display_name": "Data Simulation Node 01",
+      "host": "data-server-01.example.invalid",
+      "port": 8100,
+      "health_check": "/_simulation/health/data-server-01",
+      "services": [
+        {
+          "name": "redis-cache",
+          "host": "redis-cache.data-server-01.example.invalid",
+          "port": 6379,
+          "log_file": "data-server-01/redis-cache.jsonl",
+          "dependencies": [],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/redis-cache"
+        },
+        {
+          "name": "database-service",
+          "host": "database-service.data-server-01.example.invalid",
+          "port": 5432,
+          "log_file": "data-server-01/database-service.jsonl",
+          "dependencies": [],
+          "status": "healthy",
+          "environment": "simulation",
+          "health_check": "/_simulation/health/database-service"
+        }
+      ]
+    }
+  ]
+}

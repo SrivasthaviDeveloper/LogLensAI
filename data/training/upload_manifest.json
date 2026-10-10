@@ -1,0 +1,263 @@
+{
+  "manifest_version": 1,
+  "data_label": "fictional synthetic demo data; not production incidents",
+  "scenario_count": 72,
+  "scenario_count_by_application": {
+    "VNSP": 24,
+    "ESP": 24,
+    "IPSM": 24
+  },
+  "event_count": 257,
+  "workbook": "loglens_training_data.xlsx",
+  "files": [
+    {
+      "relative_path": "ESP/api-gateway/app.log",
+      "local_path": "mock_logs/ESP/api-gateway/app.log",
+      "sha256": "7bac6504cb23a885f5ddb3f132e9d280aaebbf91984d58d049447bb8b9abab71",
+      "event_count": 52,
+      "scenario_ids": [
+        "SCN-ESP-001",
+        "SCN-ESP-002",
+        "SCN-ESP-003",
+        "SCN-ESP-004",
+        "SCN-ESP-005",
+        "SCN-ESP-006",
+        "SCN-ESP-007",
+        "SCN-ESP-008",
+        "SCN-ESP-009",
+        "SCN-ESP-010",
+        "SCN-ESP-011",
+        "SCN-ESP-012",
+        "SCN-ESP-013",
+        "SCN-ESP-014",
+        "SCN-ESP-015",
+        "SCN-ESP-016",
+        "SCN-ESP-017",
+        "SCN-ESP-018",
+        "SCN-ESP-019",
+        "SCN-ESP-020",
+        "SCN-ESP-021",
+        "SCN-ESP-022",
+        "SCN-ESP-023",
+        "SCN-ESP-024"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "ESP/auth-service/app.log",
+      "local_path": "mock_logs/ESP/auth-service/app.log",
+      "sha256": "d0db20e126384c818c2c56ff16bf95e5623c5870192c487370119ff62633b5bb",
+      "event_count": 4,
+      "scenario_ids": [
+        "SCN-ESP-007",
+        "SCN-ESP-008",
+        "SCN-ESP-021",
+        "SCN-ESP-022"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "ESP/entity-service/app.log",
+      "local_path": "mock_logs/ESP/entity-service/app.log",
+      "sha256": "0b27a03870e312ce92a1a914e7ec371d677e9b51d990f302a126f91edd284614",
+      "event_count": 21,
+      "scenario_ids": [
+        "SCN-ESP-001",
+        "SCN-ESP-002",
+        "SCN-ESP-003",
+        "SCN-ESP-004",
+        "SCN-ESP-005",
+        "SCN-ESP-011",
+        "SCN-ESP-013",
+        "SCN-ESP-014",
+        "SCN-ESP-015",
+        "SCN-ESP-020",
+        "SCN-ESP-023"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "ESP/mock-dependency/app.log",
+      "local_path": "mock_logs/ESP/mock-dependency/app.log",
+      "sha256": "7292ca062a47024dba9de3a5e7e4c82d7ee281fee96e7e4fdbe25c8a8c48ffa3",
+      "event_count": 7,
+      "scenario_ids": [
+        "SCN-ESP-009",
+        "SCN-ESP-010",
+        "SCN-ESP-018"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "IPSM/api-gateway/app.log",
+      "local_path": "mock_logs/IPSM/api-gateway/app.log",
+      "sha256": "b0378bd801f1e493201f437f8919f3a5750d2f036c32da8d58e3c76f65dd1c38",
+      "event_count": 52,
+      "scenario_ids": [
+        "SCN-IPSM-001",
+        "SCN-IPSM-002",
+        "SCN-IPSM-003",
+        "SCN-IPSM-004",
+        "SCN-IPSM-005",
+        "SCN-IPSM-006",
+        "SCN-IPSM-007",
+        "SCN-IPSM-008",
+        "SCN-IPSM-009",
+        "SCN-IPSM-010",
+        "SCN-IPSM-011",
+        "SCN-IPSM-012",
+        "SCN-IPSM-013",
+        "SCN-IPSM-014",
+        "SCN-IPSM-015",
+        "SCN-IPSM-016",
+        "SCN-IPSM-017",
+        "SCN-IPSM-018",
+        "SCN-IPSM-019",
+        "SCN-IPSM-020",
+        "SCN-IPSM-021",
+        "SCN-IPSM-022",
+        "SCN-IPSM-023",
+        "SCN-IPSM-024"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "IPSM/auth-service/app.log",
+      "local_path": "mock_logs/IPSM/auth-service/app.log",
+      "sha256": "cbaad2fdb2e5fe9829163e94ea8af75db7cafe20ae24450e91942b948e46996f",
+      "event_count": 2,
+      "scenario_ids": [
+        "SCN-IPSM-009",
+        "SCN-IPSM-010"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "IPSM/ip-service/app.log",
+      "local_path": "mock_logs/IPSM/ip-service/app.log",
+      "sha256": "ee3c0bac47151084d20059179867d312d167359fc5cdb650f20a404abbb16e56",
+      "event_count": 25,
+      "scenario_ids": [
+        "SCN-IPSM-001",
+        "SCN-IPSM-002",
+        "SCN-IPSM-003",
+        "SCN-IPSM-004",
+        "SCN-IPSM-005",
+        "SCN-IPSM-007",
+        "SCN-IPSM-008",
+        "SCN-IPSM-013",
+        "SCN-IPSM-015",
+        "SCN-IPSM-016",
+        "SCN-IPSM-018",
+        "SCN-IPSM-020",
+        "SCN-IPSM-023"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "IPSM/mock-dependency/app.log",
+      "local_path": "mock_logs/IPSM/mock-dependency/app.log",
+      "sha256": "2c5abac8e50b547840aeb433ea4834360551cbd11abbe0bec4f5f26888a321e0",
+      "event_count": 7,
+      "scenario_ids": [
+        "SCN-IPSM-011",
+        "SCN-IPSM-012",
+        "SCN-IPSM-021"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "VNSP/api-gateway/app.log",
+      "local_path": "mock_logs/VNSP/api-gateway/app.log",
+      "sha256": "66d29307835119db9ee7225f5e96c46d5ac385d3b18edfb271ae68935024ab47",
+      "event_count": 52,
+      "scenario_ids": [
+        "SCN-VNSP-001",
+        "SCN-VNSP-002",
+        "SCN-VNSP-003",
+        "SCN-VNSP-004",
+        "SCN-VNSP-005",
+        "SCN-VNSP-006",
+        "SCN-VNSP-007",
+        "SCN-VNSP-008",
+        "SCN-VNSP-009",
+        "SCN-VNSP-010",
+        "SCN-VNSP-011",
+        "SCN-VNSP-012",
+        "SCN-VNSP-013",
+        "SCN-VNSP-014",
+        "SCN-VNSP-015",
+        "SCN-VNSP-016",
+        "SCN-VNSP-017",
+        "SCN-VNSP-018",
+        "SCN-VNSP-019",
+        "SCN-VNSP-020",
+        "SCN-VNSP-021",
+        "SCN-VNSP-022",
+        "SCN-VNSP-023",
+        "SCN-VNSP-024"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "VNSP/auth-service/app.log",
+      "local_path": "mock_logs/VNSP/auth-service/app.log",
+      "sha256": "c7aad807ac131cdadca367d724d4c9a9290317bb19b0ae026ebb0028d93da170",
+      "event_count": 2,
+      "scenario_ids": [
+        "SCN-VNSP-007",
+        "SCN-VNSP-008"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "VNSP/mock-dependency/app.log",
+      "local_path": "mock_logs/VNSP/mock-dependency/app.log",
+      "sha256": "a197473d9ed04792dfc95f02acd365b8787fe8081eee69eed7afbb66a83dd5c6",
+      "event_count": 10,
+      "scenario_ids": [
+        "SCN-VNSP-009",
+        "SCN-VNSP-010",
+        "SCN-VNSP-015",
+        "SCN-VNSP-022"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    },
+    {
+      "relative_path": "VNSP/vdc-service/app.log",
+      "local_path": "mock_logs/VNSP/vdc-service/app.log",
+      "sha256": "394ba90335a516727bb4701d1523fbe960430eb56c73ad2c67b0a59da51b16e1",
+      "event_count": 23,
+      "scenario_ids": [
+        "SCN-VNSP-001",
+        "SCN-VNSP-002",
+        "SCN-VNSP-003",
+        "SCN-VNSP-004",
+        "SCN-VNSP-005",
+        "SCN-VNSP-011",
+        "SCN-VNSP-013",
+        "SCN-VNSP-014",
+        "SCN-VNSP-018",
+        "SCN-VNSP-019",
+        "SCN-VNSP-021",
+        "SCN-VNSP-023"
+      ],
+      "upload_status": "failed",
+      "upload_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+    }
+  ],
+  "publish_attempted_at": "2026-10-10T09:45:47+00:00",
+  "publish_status": "failed",
+  "publish_message": "SSH log retrieval is disabled or not marked authorized in the local log-source configuration."
+}

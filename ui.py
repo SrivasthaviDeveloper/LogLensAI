@@ -16,7 +16,7 @@ import pandas as pd
 import streamlit as st
 from pydantic import ValidationError
 
-from incident_analysis import explain_error
+from incident_ui import render_incident_workflow
 from models import (
     DiagnosticResult,
     DiagnosticStatus,
@@ -200,71 +200,8 @@ def _render_dashboard() -> None:
         unsafe_allow_html=True,
     )
 
-    st.subheader("Incident intake")
-    st.caption("Enter the action and full error log message. This local heuristic summarizes common patterns; it does not send the message to the demo API.")
-    with st.form("incident_intake", clear_on_submit=False):
-        app_col, error_col = st.columns(2)
-        with app_col:
-            application_name = st.selectbox("Application Name", _application_names())
-        with error_col:
-            action_name = st.text_input("Action Name", placeholder="e.g. CreateSubscription")
-        log_message = st.text_area(
-            "Full Error Log Message",
-            placeholder="Paste the complete error log message here, including relevant context. Remove secrets and personal data first.",
-            height=220,
-        )
-        with st.expander("Advanced options"):
-            service_name = st.text_input("Service / Component", placeholder="e.g. billing-api")
-            environment = st.selectbox(
-                "Environment", ["Unspecified", "Development", "Test", "Staging", "Production"]
-            )
-            correlation_id = st.text_input(
-                "Request / Correlation ID (optional)",
-                placeholder="e.g. req-7f3a2c",
-            )
-            event_time = st.text_input(
-                "Event time (optional)",
-                placeholder="e.g. 2026-10-10 14:30 UTC",
-            )
-        analyze_incident = st.form_submit_button("Analyze incident", type="primary")
-
-    if analyze_incident:
-        if not action_name.strip() and not log_message.strip():
-            st.warning("Enter an action name or a full error log message to analyze.")
-        else:
-            st.session_state["incident_intake"] = {
-                "application": application_name,
-                "action_name": action_name.strip(),
-                "log_message": log_message,
-                "service_name": service_name.strip(),
-                "environment": environment,
-                "correlation_id": correlation_id.strip(),
-                "event_time": event_time.strip(),
-            }
-
-    incident = st.session_state.get("incident_intake")
-    if incident:
-        st.markdown(f"**Application:** {incident['application']} | **Action:** {incident['action_name'] or 'Not provided'}")
-        advanced_context = [
-            f"Service/component: {incident['service_name']}",
-            f"Environment: {incident['environment']}",
-            f"Request/correlation ID: {incident['correlation_id']}",
-            f"Event time: {incident['event_time']}",
-        ]
-        provided_context = [item for item in advanced_context if not item.endswith(": ") and not item.endswith(": Unspecified")]
-        if provided_context:
-            st.caption(" | ".join(provided_context))
-        explanation, checks = explain_error(f"{incident['action_name']}\n{incident['log_message']}")
-        st.markdown("#### Initial assessment")
-        st.write(explanation)
-        st.markdown("#### Suggested checks")
-        for check in checks:
-            st.markdown(f"- {check}")
-        if incident["log_message"]:
-            with st.expander("View complete submitted error log message"):
-                st.code(incident["log_message"], language=None)
-
     api_base_url = resolve_api_base_url()
+    render_incident_workflow(api_base_url, _application_names())
     with st.sidebar:
         st.subheader("Workspace")
         st.caption("Backend API")

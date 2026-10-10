@@ -1,0 +1,20 @@
+{
+  "mode": "mock",
+  "ssh": {
+    "enabled": false,
+    "authorized": false,
+    "host": "127.0.0.1",
+    "port": 2222,
+    "remote_root": "~/loglens/mock_logs",
+    "auth_method": "private_key",
+    "allowed_services": [
+      "api-gateway",
+      "auth-service",
+      "circuit-service",
+      "payment-service",
+      "notification-service",
+      "redis-cache",
+      "database-service"
+    ]
+  }
+}

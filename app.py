@@ -10,7 +10,7 @@ from typing import Any
 import boto3
 import streamlit as st
 from botocore.exceptions import BotoCoreError, ClientError, NoCredentialsError
-from incident_analysis import explain_error
+from diagnostics import explain_error
 
 
 ROOT = Path(__file__).parent

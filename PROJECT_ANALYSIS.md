@@ -1,216 +1,186 @@
-# VNSP Intelligent Troubleshooter — Technical Analysis
+# LogLens AI — VNSP Intelligent Troubleshooter: Project Analysis
 
-**Audit snapshot:** 2026-10-10. This report describes the repository code, not production VNSP behavior. Only fabricated incident data is used by the `ui.py` + FastAPI workflow. The separate `app.py` path contains functional AWS CloudWatch calls when configured.
+**Repository audit and simulation extension, 2026-10-10.** This report describes the current code. The simulated hosts and service records are fabricated. The separate `app.py` prototype contains AWS CloudWatch access code and must not be represented as part of the local-only simulation.
 
-## 1. Project overview
+## Executive summary
 
-### Problem and intended audience
+The project now demonstrates two separate workflows:
 
-The project demonstrates how an incident-triage interface can connect a frontend to a backend, validate structured data, identify an error category, and show a possible cause and next steps. It is suitable as a learning/demo project for developers and operations engineers who want to understand a troubleshooting workflow.
+1. **Existing sample diagnosis:** `ui.py` calls a small FastAPI service; `diagnostics.py` validates a fixed request ID and returns one of three authored scenarios from `mock_data.py`.
+2. **Mock infrastructure lab:** Streamlit's `pages/1_Simulation_Lab.py` communicates with the same API. The API generates deterministic service lifecycle events, writes JSONL records under a dedicated local data directory, and investigates records by request ID with filtering and source references.
 
-### Implemented scope
+The new infrastructure is logical only. Its hostnames end in `.example.invalid`; no mock host listens on the configured port. The generator, log store, diagnostics, and investigation operate locally without an external service. The project does **not** ingest arbitrary production logs, query production VNSP, infer a real topology, or use TF-IDF/LLMs. `app.py` is different: it can query AWS CloudWatch if the catalog is populated and AWS credentials are configured.
 
-The local demo serves three fixed scenario IDs from `mock_data.py`:
-
-| ID | Category | Simulated content |
-| --- | --- | --- |
-| `REQ-1001` | `credential_mismatch` | Caller and simulated service audience values differ; the log explicitly says no credential values are recorded. |
-| `REQ-1002` | `request_timeout` | A simulated orchestration step exceeds a 2000 ms client response window. |
-| `REQ-9999` | `unknown_error` | A simulated payload-shape validation error occurs; the cause is intentionally described as not established. |
-
-`ui.py` obtains the scenario list and diagnosis from FastAPI and displays the resulting structured fields. This workflow does **not** query production logs or infer service/region mappings. It does not accept arbitrary log text, persist cases, connect to databases, or use a machine-learning model.
-
-The repository also contains `app.py`, a separate incident-triage prototype that can call AWS CloudWatch through `boto3`. The default `config/services.json` has placeholder environment names and empty regions/log groups, so its initial catalog does not define CloudWatch search targets. If a user configures targets and AWS credentials, `app.py` can make external AWS requests. This path is not the fabricated-data demo and is not tested by the current suite.
-
-### End-to-end local flow
+## Architecture
 
 ```mermaid
-sequenceDiagram
-    actor User
-    participant UI as Streamlit ui.py
-    participant API as FastAPI main.py
-    participant Engine as diagnostics.py
-    participant Data as mock_data.py
-    participant Models as Pydantic models.py
-    User->>UI: Open dashboard and choose request ID
-    UI->>API: GET /health and GET /scenarios
-    API-->>UI: Validated health and scenario summaries
-    User->>UI: Run diagnostic
-    UI->>API: GET /diagnostics/{request_id}
-    API->>Engine: diagnose_scenario(request_id)
-    Engine->>Models: Validate and normalize the ID
-    Engine->>Data: get_scenario(normalized ID)
-    Data-->>Engine: ScenarioData or no match
-    Engine->>Models: Build DiagnosticResult
-    Engine-->>API: Structured result
-    API-->>UI: JSON and HTTP status
-    UI->>Models: Validate response
-    UI-->>User: Category, probable cause, steps, fabricated logs
+flowchart LR
+  User --> Streamlit[ui.py and pages/1_Simulation_Lab.py]
+  Streamlit -->|HTTP| FastAPI[main.py]
+  FastAPI --> Models[models.py]
+  FastAPI --> Existing[diagnostics.py and mock_data.py]
+  FastAPI --> Simulator[simulation.py]
+  FastAPI --> Investigator[investigation.py]
+  Simulator --> Manager[infrastructure.py]
+  Investigator --> Manager
+  Manager --> Catalog[config/mock_infrastructure.json]
+  Manager --> Files[data/mock_infrastructure/*.jsonl]
 ```
 
-## 2. Architecture and repository map
+The existing diagnosis path stays intact. The simulation lab is added as a Streamlit multipage entrypoint rather than replacing the old page. Diagnostic business rules and error explanation live in `diagnostics.py`; infrastructure reads/writes and simulation orchestration are separated into `infrastructure.py` and `simulation.py`; investigation correlation is in `investigation.py`.
 
-| File or folder | Purpose and interactions |
+## Repository structure and responsibilities
+
+| File/folder | Implementation |
 | --- | --- |
-| `main.py` | Constructs the FastAPI `app`. `health_check()` returns `HealthResponse`; `list_scenarios()` calls `list_available_scenarios()`; `get_diagnostic()` calls `diagnose_scenario()` and maps result statuses to HTTP codes. |
-| `models.py` | Shared Pydantic contracts. `DiagnosticRequest` strictly accepts a string `scenario_id`, limits it to 1–32 characters, strips whitespace and uppercases it. `DiagnosticLog`, `ScenarioData`, `DiagnosticResult`, `HealthResponse`, `ScenarioSummary`, and `ScenarioListResponse` define the other data structures. `ErrorCategory` and `DiagnosticStatus` are string enums. |
-| `diagnostics.py` | Pure local engine. `diagnose_scenario(identifier)` accepts a string or a value Pydantic can validate as `DiagnosticRequest`, looks up `get_scenario()`, and returns a `DiagnosticResult` for success, malformed input, missing ID, or internal lookup error. `list_available_scenarios()` converts the scenario catalog to public summaries. |
-| `mock_data.py` | Holds `SCENARIOS`, each a validated `ScenarioData`, and `get_scenario(scenario_id)`. It is the data source for all local-demo findings and logs. |
-| `ui.py` | Streamlit dashboard and HTTP adapter. `resolve_api_base_url()` reads `VNSP_API_BASE_URL` (default `http://127.0.0.1:8000`); `_get_json()` performs bounded HTTP GETs; `fetch_health()`, `fetch_scenarios()`, and `fetch_diagnostic()` validate response payloads. `_render_dashboard()` presents metrics, selector, status, result, and log table. |
-| `app.py` | Separate Streamlit AWS prototype. `load_catalog()` reads JSON at `VNSP_CONFIG` or `config/services.json`; `explain_error()` uses simple text matching; `search_cloudwatch()` queries AWS Logs with `boto3`. The module renders its UI at import time and handles CloudWatch exceptions in the page. |
-| `config/services.json` | Service metadata for `app.py`; the checked-in values are example placeholders with no configured regions or log groups. |
-| `tests/test_diagnostics.py` | Unit tests for all three scenarios, normalization, unsupported/malformed identifiers, and unexpected lookup exceptions. |
-| `tests/test_api.py` | FastAPI `TestClient` tests for health, scenarios, successful diagnoses, unknown/malformed IDs, and sanitized unexpected errors. |
-| `tests/test_ui.py` | UI HTTP-helper tests. HTTPX `MockTransport` simulates responses, including base URL selection, all three categories, unknown ID, connection failure, and malformed payload. It does not render the Streamlit page in a browser. |
-| `requirements.txt` | Dependency ranges for both app paths and tests. |
-| `.gitignore` | Ignores virtual environments, Python/test caches, build artifacts, local environment files, editor state, AWS config, logs, and selected scratch dependency directories. `.env.example` is explicitly allowed. |
-| `.env.example` | Safe example value for the local API URL. It is documentation only; the code does not load dotenv files. |
-| `README.md`, `README_UI.md` | Setup, endpoint, and collaboration instructions; the UI guide is a short companion to the main README. |
+| `main.py` | FastAPI `app`, existing sample routes, inventory/status/log routes, simulation/reset routes, and `POST /investigate`; a module-level `InfrastructureManager` uses the fixed project config/data paths. |
+| `models.py` | Pydantic v2 schemas for existing requests/results and infrastructure, service state, structured logs, simulation results, investigation input/output, and request/response evidence. `StrEnum` sets Python 3.11 as the minimum. |
+| `diagnostics.py` | Existing `diagnose_scenario()` and `list_available_scenarios()`. `classify_error_family()` and `explain_error()` now centralize the keyword rules also used by the older AWS UI. No ML model is used. |
+| `mock_data.py` | The original fictional `REQ-1001`, `REQ-1002`, and `REQ-9999` examples, looked up by `get_scenario()`. |
+| `config/mock_infrastructure.json` | `InfrastructureConfig`-validated four-server topology, seven service definitions, `.example.invalid` hostnames, logical port metadata, dependencies, baseline status, environment, health-check labels, and relative JSONL locations. |
+| `infrastructure.py` | `InfrastructureManager` loads and validates the catalog, rejects duplicate/missing topology references and unsafe service log paths, lists server/service metadata, changes in-memory status overrides, appends deduplicated JSONL records, filters local logs, and resets generated JSONL/status state. `UnknownServerError` and `UnknownServiceError` distinguish missing catalog entries. |
+| `simulation.py` | `EventSpec` and `ScenarioSpec` define the deterministic fixtures. `generate_scenario()` creates correlated records, marks status side effects, writes through the manager, and returns `SimulationResult`. |
+| `investigation.py` | `_candidate_services()` applies transparent keyword rules; `_evidence_category()` uses observed log metadata; `investigate_incident()` correlates/filter records and composes an evidence-first report. Missing IDs produce `not_found` with no invented identifiers or log records. |
+| `simulation_client.py` | `request_simulation_api()` performs bounded HTTPX requests and converts connection/HTTP/JSON failures into safe `SimulationApiError` messages. Uses `VNSP_API_BASE_URL`. |
+| `simulation_ui.py` | Simulation page renderer, inventory/log tables, scenario form, investigation form, status controls, reset control, and result/evidence presentation. |
+| `pages/1_Simulation_Lab.py` | Streamlit multipage wrapper that calls `render_simulation_page()`. |
+| `ui.py` | Existing REQ-scenario dashboard and HTTPX/Pydantic response helpers. |
+| `app.py` | Separate Streamlit AWS prototype. `load_catalog()` reads `VNSP_CONFIG`; `search_cloudwatch()` uses boto3 `filter_log_events`; `explain_error()` is imported from `diagnostics.py`. Its code can make real AWS calls if configured. |
+| `config/services.json` | Placeholder service catalog for `app.py`; currently has empty region/log-group entries. |
+| `tests/test_diagnostics.py` | Existing fixed-scenario behavior, input normalization, missing IDs, malformed input, and unexpected lookup tests. |
+| `tests/test_api.py` | HTTP-level API tests using an in-process HTTPX `ASGITransport` adapter; exercises old and new routes without opening sockets. |
+| `tests/test_ui.py` | Tests original UI URL/response handling with HTTPX `MockTransport`. |
+| `tests/test_infrastructure.py` | Topology, six scenarios, deterministic correlation, error outcomes, filters, source paths, missing evidence, status/reset, and input/path constraints. |
+| `tests/test_simulation_client.py` | Simulation UI client success, environment URL, HTTP failure, connection failure, and invalid JSON tests. |
+| `requirements.txt` | Python dependency ranges; no new third-party dependency was needed for the simulation layer. |
+| `.gitignore` | Ignores environments, caches, build outputs, secret/environment files, editor state, and generated `data/mock_infrastructure/` records. |
+| `README.md`, `README_UI.md`, `.env.example` | Project setup/API/team workflow docs, short legacy UI guide, and non-secret API URL example. `.env.example` is not loaded automatically. |
 
-There is no `pyproject.toml`, lock file, CI configuration, or additional Python package/module hierarchy in the checked project.
+There is no `pyproject.toml`, lock file, Docker/Kubernetes setup, CI workflow, or dedicated lint/type-check configuration.
 
-## 3. Technology stack
+## Technologies and dependency use
 
-| Technology | Evidence and role |
+| Technology | Use in this repository |
 | --- | --- |
-| Python 3.11+ | Source language. `models.py` imports `enum.StrEnum`, so Python 3.11 is a real minimum. |
-| FastAPI | `main.py` declares typed API routes and response models; OpenAPI docs are generated by FastAPI. |
-| Uvicorn | ASGI development server used to run `main:app`. |
-| Pydantic v2 | Models enforce field types, constraints, enum values, extra-field policy, and validation/serialization. Code uses `model_validate()` and `model_dump()`. |
-| Streamlit | `ui.py` and `app.py` implement two distinct browser UIs. The demo dashboard uses native metrics, selectbox, buttons, spinner, messages, expander, and dataframe. |
-| HTTPX | `ui.py` makes API requests with a 5-second timeout; tests use its `MockTransport`. FastAPI `TestClient` also relies on HTTPX/Starlette. |
-| pandas | Imported by `ui.py` to form the diagnostic log table dataframe. |
-| boto3 / botocore | `app.py` creates AWS Logs clients and handles SDK exceptions. Not used by the local demo path. |
-| pytest | Runs unit and API/helper tests. |
-| Git / GitHub remote | The working branch is `main`, tracking `origin/main`; the configured origin points to the project GitHub repository. |
+| Python 3.11+ | Source language; `enum.StrEnum` is used in `models.py`. |
+| FastAPI | API routing, request validation, response models, and OpenAPI documentation. |
+| Uvicorn | Local ASGI development server for `main:app`. |
+| Pydantic v2 | Validates data models and serializes dates/enums in API JSON and JSONL. |
+| Streamlit | Original diagnosis dashboard and added multipage simulation lab. |
+| HTTPX | Outbound UI calls; `ASGITransport` exercises FastAPI endpoints in-process; `MockTransport` covers UI transport helpers. |
+| pandas | DataFrames shown for diagnosis logs, infrastructure inventory, and investigation evidence. |
+| pytest | Unit and API test runner. |
+| boto3 / botocore | AWS Logs calls and error classes in `app.py` only; not used by simulation/`ui.py` workflow. |
+| Git/GitHub | Existing repo versioning and configured remote. |
 
-`requirements.txt` declares `boto3`, `streamlit`, `pandas`, `pydantic`, `pytest`, `fastapi`, `starlette`, `uvicorn`, and `httpx`. Imports and run paths show why each is present: `starlette` is explicitly pinned alongside FastAPI and used indirectly by `TestClient`; `uvicorn` is the launch server rather than an application import. There is no dotenv package or dotenv-loading call.
+All are declared in `requirements.txt`. `starlette` is declared as FastAPI's ASGI/test foundation; Uvicorn is launched as a module rather than imported by application code. No `python-dotenv` package is present or needed.
 
-## 4. Feature implementation details
+## Simulated topology
 
-### Scenario lookup and diagnostics
+`config/mock_infrastructure.json` describes:
 
-`DiagnosticRequest` in `models.py` rejects non-string IDs (`strict=True`), extra keys, empty-after-trimming IDs, and values longer than 32 characters. It normalizes accepted values to uppercase. `diagnose_scenario()` validates its input, then retrieves the normalized key from `SCENARIOS` through `get_scenario()`.
+| Logical server | Services hosted |
+| --- | --- |
+| `app-server-01` | `api-gateway`, `auth-service` |
+| `app-server-02` | `payment-service`, `notification-service` |
+| `backend-server-01` | `circuit-service` |
+| `data-server-01` | `redis-cache`, `database-service` |
 
-Known scenarios produce `DiagnosticStatus.DIAGNOSED` with the catalog's category, title, cause, recommendations, and log entries. An unsupported but valid identifier becomes `NOT_FOUND`; invalid input becomes `INVALID_REQUEST`; lookup exceptions become `ANALYSIS_ERROR`. These error outcomes do not expose exception details. This is deterministic key lookup, not a general log classifier: the category comes from authored mock data.
+Metadata includes a logical host, port, relative log file, dependencies, baseline health status, simulation environment, and a health-check label. The health-check labels are descriptive only: the code never calls the logical hostname or opens a simulated service port. All service hosts and server hosts use the reserved `.example.invalid` domain.
 
-### Pydantic contracts
+## Scenarios and request flow
 
-- `DiagnosticRequest`: one `scenario_id`; extra fields forbidden; strict string length 1–32; strips and uppercases.
-- `DiagnosticLog`: timestamp as `datetime`, non-empty service, level, and message; frozen/extra fields forbidden.
-- `ScenarioData`: pattern `REQ-` plus four digits; non-empty title/cause/steps/logs; enum category; frozen.
-- `DiagnosticResult`: scenario ID, status, optional category/title/cause, recommendation list, log list, and message; extra fields forbidden.
-- `HealthResponse`: literal status `ok`.
-- `ScenarioSummary` and `ScenarioListResponse`: public scenario metadata and a non-negative count.
+`SimulationScenarioName` defines the six names. `EventSpec` holds per-event service, offset, severity, event name/message, optional method/endpoint/status/duration/error/dependency, and whether the event belongs to the request correlation. `generate_scenario()` derives an ID and trace from the scenario code and full 10-digit seed, adds that seed to a fixed UTC timestamp, builds `SimulatedLogRecord` objects, and persists each record through `InfrastructureManager.write_logs()`.
 
-No request body is used by the HTTP API; its parameter is a path string passed to the engine, where Pydantic performs validation.
+| Scenario | Flow / evidence and response |
+| --- | --- |
+| `authentication_failure` | Gateway receives a request, `auth-service` rejects a fictional audience, gateway returns 401. It has no downstream circuit/payment events. |
+| `redis_timeout` | Gateway → auth → circuit → Redis. Both Redis operations exceed the simulated 800 ms timeout; circuit records a retry and failure; gateway returns 504. `redis-cache` status changes to degraded. |
+| `database_failure` | Gateway → payment → database. Database records `DB_CONNECTION_RESET`, payment records dependency failure, gateway returns 500. |
+| `downstream_unavailable` | Gateway/payment records two failed notification attempts, notification is set unavailable, caller defers notification and gateway returns 503. The unavailable notification service emits no fabricated request log. |
+| `successful_request` | A standalone Redis recovery health event (no request/trace IDs), then a correlated gateway → auth → circuit → Redis cache-hit path and HTTP 200. Redis is restored to healthy. |
+| `missing_correlation` | Gateway records a 400 event with null request/trace ID. Investigating with no request ID returns `not_found` and empty evidence rather than manufacturing a correlation key. |
 
-### API routes and behavior
+Generated JSONL records are grouped by the configured per-service paths such as `data/mock_infrastructure/backend-server-01/circuit-service.jsonl`. Repeating the same fixture is idempotent by scenario/request/trace/timestamp/event identity. Different seeds produce distinct request/trace IDs. Records contain ISO timestamps, severity, server/service, nullable request/trace ID, event, message, scenario, and a relative source-file reference; HTTP, duration, dependency, and error fields are populated only when applicable.
 
-| Method | Route | Input | Success response | Error status |
-| --- | --- | --- | --- | --- |
-| `GET` | `/health` | None | `200`, `{"status":"ok"}` | None defined |
-| `GET` | `/scenarios` | None | `200`, `{"count":3,"scenarios":[...]}` | None defined |
-| `GET` | `/diagnostics/{request_id}` | Path parameter; no body | `200`, a `DiagnosticResult` | `400` invalid/malformed ID; `404` unsupported valid ID; `500` analysis error |
+The scenario `seed` changes the ID and time offset; it does not select random branches. Status overrides are held in the FastAPI process memory and revert on restart or `/simulation/reset`. JSONL files persist until reset. The reset endpoint removes only `.jsonl` files under the configured dedicated mock log root and restores configured service statuses.
 
-Successful diagnosis response example (contents come from the fabricated `REQ-1001` record):
+## Investigation behavior and evidence policy
+
+`InvestigationRequest` validates `application_name`, `error_description`, optional ID/service/environment, and timezone-aware time bounds. `investigate_incident()` rejects an app name not represented in the infrastructure catalog as a structured not-found result. Candidate service rules reuse the error-family classification in `diagnostics.py`, plus service words such as `redis`, `database`, and `notification`. These results are explicitly candidates, not confirmed participants.
+
+With an ID, the manager searches only configured JSONL files and applies request ID plus optional time/service/environment filters. Matching services are confirmed from the actual records. A trace is returned only if the matching records contain exactly one non-null trace ID. HTTP details are projected only from records that actually contain method/status data. Error category is taken from recorded exception metadata where possible; otherwise an error-text category is labeled with `classification_basis="error_text"`. The cause is shown as a hypothesis based on an observed error record, not as proven root cause. No match or omitted request ID returns `EvidenceStatus.NOT_FOUND`, empty logs, explicit missing-evidence notes, and no fabricated request/trace ID.
+
+This is a simple deterministic rules engine, not AI, TF-IDF, a trained classifier, or an LLM.
+
+## API reference
+
+| Method | Path | Input | Response / status behavior |
+| --- | --- | --- | --- |
+| `GET` | `/health` | none | `HealthResponse`; 200. |
+| `GET` | `/scenarios` | none | Existing `ScenarioListResponse`; 200. |
+| `GET` | `/diagnostics/{request_id}` | path ID | Existing `DiagnosticResult`; 200 diagnosed, 400 malformed, 404 unsupported, 500 analysis error. |
+| `GET` | `/infrastructure/servers` | none | `ServerInventoryResponse`; 200. |
+| `GET` | `/infrastructure/servers/{server_id}/services` | path server | `ServiceInventoryResponse`; 404 if missing. |
+| `GET` | `/infrastructure/services` | none | `ServiceInventoryResponse`; 200. |
+| `GET` | `/infrastructure/services/{service_name}` | path service | `ServiceDetailsResponse`; 404 if missing. |
+| `PATCH` | `/infrastructure/services/{service_name}/status` | JSON `{"status":"healthy"}` (also `degraded`, `unavailable`) | `ServiceStatusResponse`; 404 unknown service, 422 invalid body. Updates simulation metadata only. |
+| `GET` | `/infrastructure/services/{service_name}/logs` | service path; optional time/severity/error-category query | `LogSearchResponse`; 404 unknown service. |
+| `GET` | `/infrastructure/servers/{server_id}/logs` | server path; optional filters | `LogSearchResponse`; 404 unknown server. |
+| `GET` | `/logs/search` | optional `request_id`, `trace_id`, `server_id`, `service_name`, `start_time`, `end_time`, `severity`, `error_category`, `environment` query | `LogSearchResponse`; 400 if no ID/filter, 404 unknown server/service. Filters are combined. |
+| `POST` | `/simulation/scenarios/{scenario_name}` | optional JSON `{"seed":42}` | `SimulationResult`; 422 invalid enum/body. |
+| `POST` | `/simulation/reset` | none | `SimulationResetResponse`; clears generated JSONL and in-memory status overrides. |
+| `POST` | `/investigate` | JSON investigation request | `InvestigationResult`; 200 status field `found` or `not_found`; 404 unknown service filter, 422 invalid body. |
+
+`POST /investigate` example:
 
 ```json
 {
-  "scenario_id": "REQ-1001",
-  "status": "diagnosed",
-  "category": "credential_mismatch",
-  "title": "Simulated partner credential mismatch",
-  "probable_root_cause": "The fictional caller profile sent an audience value that does not match the value expected by the simulated VNSP authentication service.",
-  "recommended_steps": [
-    "Compare the caller and service audience settings in the local demo configuration.",
-    "Confirm both simulated components are using the same demo environment profile.",
-    "Trace the request ID across the caller and authentication log entries."
-  ],
-  "logs": [
-    {
-      "timestamp": "2026-01-14T09:15:02Z",
-      "service": "Demo Partner Client",
-      "level": "INFO",
-      "message": "REQ-1001 submitted using simulated profile PARTNER_DEMO_A."
-    },
-    {
-      "timestamp": "2026-01-14T09:15:03Z",
-      "service": "Demo VNSP Auth Service",
-      "level": "WARN",
-      "message": "REQ-1001 rejected: demo audience 'vnsp-sandbox' did not match expected demo audience 'vnsp-training'. No credential values recorded."
-    }
-  ],
-  "message": "Fabricated scenario analyzed successfully."
+  "application_name": "VNSP",
+  "error_description": "Redis operation timeout",
+  "request_id": "SIM-REDIS-0000000042",
+  "start_time": "2026-10-10T09:00:00Z",
+  "end_time": "2026-10-10T11:00:00Z",
+  "service_name": "redis-cache",
+  "environment": "simulation"
 }
 ```
 
-Unknown-ID example: `GET /diagnostics/REQ-8888` returns HTTP 404 with `scenario_id: "REQ-8888"`, `status: "not_found"`, `category`, `title`, and `probable_root_cause` set to null, empty `recommended_steps` and `logs`, and a message that no fabricated scenario is available. A malformed/overlength ID returns HTTP 400; the engine's structured invalid result uses `scenario_id: "INVALID"` and `status: "invalid_request"`.
+Example report fields are `status`, echoed `input`, candidate/confirmed services, IDs (nullable), error category/classification basis, evidence and chronological timeline, request/response details, observed errors, optional hypothesis, checks, missing evidence, and message. In this example, the result is `found` only if matching generated files actually contain that exact request ID and the optional filters do not exclude them.
 
-### Streamlit behavior and API integration
+## Separate original sample diagnosis
 
-`_render_dashboard()` calls `/health` and `/scenarios` on each Streamlit rerun. It displays three overview metrics: catalog count, session-scoped successful lookup count, and distinct categories. The user selects an ID from the backend's catalog and presses **Run diagnostic**. The UI calls the existing diagnostic endpoint and validates the response with `DiagnosticResult` before rendering category, probable cause, recommended steps, and log rows. Priority is displayed as “Not defined” because the response model has no severity/priority field.
+The existing `GET /diagnostics/{request_id}` workflow remains separate from the new generated simulations. It supports fixed IDs `REQ-1001` (credential mismatch), `REQ-1002` (request timeout), and `REQ-9999` (unknown error). `diagnose_scenario()` uses Pydantic `DiagnosticRequest`, obtains `ScenarioData` from `mock_data.py`, and returns a structured result. The UI at `ui.py` validates `/health`, `/scenarios`, and diagnosis responses and shows category, likely cause, next checks, and fabricated sample logs.
 
-`fetch_health()` and `fetch_scenarios()` accept only HTTP 200; `fetch_diagnostic()` accepts the API's structured 200, 400, 404, or 500 outcomes. Network failures, invalid JSON, and schema mismatches are converted to a safe `ApiConnectionError`. When health/scenario loading fails the UI shows a backend-unavailable message; diagnostic errors are kept in Streamlit session state. The retry button clears the diagnostic error; because Streamlit reruns the page, health and scenarios are requested again.
+## Configuration and safety
 
-### Separate AWS prototype (`app.py`)
+- `VNSP_API_BASE_URL`: backend URL for both Streamlit pages; default `http://127.0.0.1:8000`.
+- `VNSP_CONFIG`: path to the legacy AWS prototype's `config/services.json`; not used by the local simulation.
+- `.env.example` shows only a local URL and is not automatically loaded.
+- API simulation/log paths come from `config/mock_infrastructure.json`; endpoint parameters cannot select arbitrary filesystem paths. Log path resolution rejects absolute/traversal paths and configured hosts must end in `.example.invalid`.
+- Simulation status changes are metadata only. No shell, SSH, database driver, AWS SDK, or socket call exists in the simulation modules.
+- `app.py` can query AWS CloudWatch using the boto3 default credential chain if configured. AWS data and credentials are outside this simulation.
 
-This path is not a simulation. `load_catalog()` parses the configured JSON catalog. `explain_error()` performs lowercased substring matching for credential/authentication, timeout, and server-error phrases, then returns generic text and checks. `search_cloudwatch()` creates a `boto3` Logs client for each requested region and calls `filter_log_events` for each group, optionally using a quoted substring filter from the correlation ID or entered error. The page shows configured service names/roles/environments/regions/groups and matching event rows.
+The local API has no authentication or authorization and should not be exposed publicly. The JSONL store reads the complete small local files into memory and is intended for a demo, not production log volume. `app.py` is not covered by automated tests and its CloudWatch query loop does not follow `nextToken` pagination.
 
-The AWS SDK default credential chain is used; the UI does not ask for keys. The code catches missing credentials and SDK/network errors at the search panel. The catalog starts with no search targets. The search routine does not follow CloudWatch `nextToken` pagination, so a result set spanning multiple pages can be incomplete. The prototype does not validate catalog JSON against a schema and has no tests in `tests/`.
+## Verification record
 
-## 5. Configuration and security
+Verification was run with the repository's `.venv` on Python 3.14.8:
 
-- `VNSP_API_BASE_URL`: read by `ui.py`; defaults to `http://127.0.0.1:8000`. It is a process environment variable, not a value automatically loaded from `.env.example`.
-- `VNSP_CONFIG`: read by `app.py`; selects the service catalog path; defaults to `config/services.json`.
-- AWS: if `app.py` is run with populated targets, `boto3` uses the environment's configured AWS credential provider chain to query CloudWatch.
-- To launch that separate prototype from the repository root, use `.\.venv\Scripts\python.exe -m streamlit run app.py`; this can contact AWS when the catalog has search targets and credentials are available.
-- `.gitignore` excludes local env files, `.aws/`, common caches/build outputs, virtualenvs, VS Code local settings, and `*.log`; `.env.example` is explicitly unignored.
+- `python -m pytest -q tests`: **60 passed**. This includes FastAPI routes through HTTPX's in-process ASGI transport and a Streamlit `AppTest` with a mocked inventory.
+- `python -m compileall -q ...`: passed for application and test modules.
+- `python -m pip check`: passed (`No broken requirements found`).
+- `git diff --check`: passed; Git emitted only line-ending conversion warnings for edited text files.
+- A manual in-process API smoke check exercised health, inventory, simulation, investigation, filtered log search, unknown server handling, and reset. No AWS or external service was contacted.
 
-The local FastAPI app has no authentication or authorization. Treat it as a local demo, not an internet-facing service. AWS output can contain operational log data; configure only approved log groups, follow access controls, and avoid placing secrets in free-text query inputs. No hardcoded AWS access-key or private-key pattern was found in tracked source during this audit. This pattern search does not prove that repository history or untracked/ignored local files have never contained a secret.
+The Python 3.11 minimum was not directly exercised in this environment; Python 3.14.8 was used. The Streamlit test verifies script rendering and page content, not appearance in a real browser. The legacy AWS page was not run because this project task is confined to fabricated local data and must not contact AWS.
 
-## 6. Testing and verification
+## PowerShell commands
 
-Tests present:
-
-- `test_diagnostics.py`: known cases, expected categories/content, request normalization, missing IDs, malformed values, and unexpected lookup errors.
-- `test_api.py`: response schemas/statuses for health and scenarios, three diagnosis cases, unknown/malformed IDs, and safe unexpected-error response.
-- `test_ui.py`: API URL configuration, HTTP response validation, all three categories, structured 404, connection errors, and invalid payload handling with mock HTTP transport.
-
-Audit execution in this environment:
-
-| Check | Result |
-| --- | --- |
-| `python -m pytest -q tests/test_diagnostics.py tests/test_ui.py` | **24 passed** (2.64 seconds). |
-| `python -m pytest -q tests` | **Not completed.** The process produced no output after 40 seconds and was interrupted while starting the FastAPI `TestClient` tests. This environment has previously stalled in the Windows asyncio socket-pair fallback. This is an environment-limited run, not evidence that all API tests pass or fail. |
-| Direct API route-handler/Pydantic smoke checks | **Passed** for health, three listed/diagnosed scenarios, unknown ID (404), and malformed ID (400), without using the TestClient server transport. |
-| `python -m compileall -q ...` | **Passed** for application modules and tests. |
-| `python -m pip check` | **Passed:** no broken requirements found in the active project environment. |
-| `git diff --check` | **Passed** with Git line-ending conversion warnings only. |
-| Browser visual check / live Streamlit session | **Not performed.** |
-| Lint/type checker | No linter or type checker is configured in the repository. |
-
-The test results above are environment-specific and should be reproduced from a clean Python 3.11+ virtual environment. In particular, run the complete suite on a normal Windows developer workstation to verify `TestClient` transport behavior there.
-
-The active test interpreter in this workspace was Python 3.14.8. The Windows `py -3.11` launcher command could not be checked here because `py.exe` was unavailable to this sandbox; Python 3.11 compatibility follows from the code's `StrEnum` minimum and remains to be run in a Python 3.11 environment.
-
-## 7. Code quality, limitations, and prioritized follow-up
-
-1. **High — AWS prototype is easy to confuse with the local demo.** `app.py` can query real CloudWatch data when configured, while the safer demo is `ui.py`. Keep the entrypoints visibly distinguished, and require explicit operator confirmation/documentation before enabling production catalogs. Do not place sensitive log output in demo environments.
-2. **High — API TestClient suite not verified in this sandbox.** The API tests are present, but this run stalled during TestClient startup. Re-run `pytest -q tests` in the team's target Windows/Python environment and, if it reproduces, investigate compatible FastAPI/Starlette/HTTPX versions and the Windows event loop setup.
-3. **Medium — AWS path has no automated coverage and omits pagination.** Add isolated mocked tests for catalog parsing, error classification, and `filter_log_events`; follow `nextToken` until exhausted or a documented result limit is reached.
-4. **Medium — local API has no auth, persistence, or deployment hardening.** This is acceptable for a local educational example, but would need a security and operations design before network exposure.
-5. **Low — dependency ranges are not locked.** A lock file or constraints file would improve repeatability across teammates; currently installation resolves compatible newer releases within broad ranges.
-6. **Low — UI/helper tests do not verify visual layout or live HTTP integration.** A browser-level test or a documented manual check could validate Streamlit interactions; the current tests only exercise Python helper functions with mocked transport.
-7. **Low — broad exception handling trades diagnostics for safe messages.** `diagnostics.py` and `main.py` intentionally suppress internal exception details, but there is no structured server-side logging to aid debugging. Add sanitized structured logs if operational use is later intended.
-
-## 8. Reproduction commands
-
-From the repository root in Windows PowerShell:
+Create the environment and install:
 
 ```powershell
 py -3.11 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
@@ -227,10 +197,10 @@ $env:VNSP_API_BASE_URL = "http://127.0.0.1:8000"
 .\.venv\Scripts\python.exe -m streamlit run ui.py
 ```
 
-Open `http://localhost:8501` and `http://127.0.0.1:8000/docs`. Run checks:
+Run tests and checks:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q tests
-.\.venv\Scripts\python.exe -m compileall -q main.py models.py diagnostics.py mock_data.py ui.py app.py tests
+.\.venv\Scripts\python.exe -m compileall -q main.py models.py diagnostics.py mock_data.py infrastructure.py simulation.py investigation.py simulation_client.py simulation_ui.py ui.py app.py tests
 .\.venv\Scripts\python.exe -m pip check
 ```
