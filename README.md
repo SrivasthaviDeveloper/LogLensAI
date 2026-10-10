@@ -174,3 +174,9 @@ git pull --ff-only origin main
 ```
 
 Do not use `git add .` without inspecting the file list, commit secrets, force-push shared branches, or push directly to `main` as the team workflow.
+
+## Provisioning platform investigation demo
+
+The hackathon flow is documented in the workspace-level `DEMO_README.md`. It adds an `/investigate` API route that forwards the selected application, error message, and optional event time/order ID to the independent `ProvisioningPlatformSimulator` service on port 8010. The Streamlit dashboard renders the matched Hosted/Premise order path, server and microservice, order request/response, downstream IPSM/ESP request/response, simulated logs, and suggested checks.
+
+Run the three local services from the workspace `work` directory with `./start-demo.ps1`. This is a fictional local simulation; it does not log into real servers or query AWS.

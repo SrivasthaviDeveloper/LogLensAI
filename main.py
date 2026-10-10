@@ -1,6 +1,10 @@
 """FastAPI endpoints for the local VNSP troubleshooting demo."""
 
-from fastapi import FastAPI, Response
+import os
+
+import httpx
+from fastapi import FastAPI, HTTPException, Response
+from pydantic import BaseModel, Field
 
 from diagnostics import diagnose_scenario, list_available_scenarios
 from models import (
@@ -12,10 +16,40 @@ from models import (
 
 
 app = FastAPI(
-    title="VNSP Intelligent Troubleshooter",
-    description="Local demo API backed only by fictional diagnostic scenarios.",
+    title="LogLensAI Provisioning Troubleshooter",
+    description="Local incident API that triggers an authenticated Jenkins demo log-pull job.",
     version="0.1.0",
 )
+
+
+class IncidentRequest(BaseModel):
+    application: str = Field(min_length=1, max_length=100)
+    error: str = Field(min_length=1, max_length=2000)
+    event_time: str | None = None
+    order_id: str | None = None
+    correlation_id: str | None = None
+
+
+@app.post("/investigate", tags=["incident investigation"])
+def investigate_incident(request: IncidentRequest) -> dict:
+    """Trigger an authenticated Jenkins demo job to retrieve reference logs."""
+    base_url = os.getenv("JENKINS_DEMO_URL", "http://127.0.0.1:8020").rstrip("/")
+    username = os.getenv("JENKINS_DEMO_USERNAME", "loglens-demo")
+    token = os.getenv("JENKINS_DEMO_TOKEN", "demo-jenkins-token")
+    try:
+        response = httpx.post(
+            f"{base_url}/job/LogLensAI-Reference-Log-Pull/buildWithParameters",
+            params=request.model_dump(exclude_none=True),
+            auth=(username, token),
+            timeout=15.0,
+        )
+        response.raise_for_status()
+        return response.json()
+    except (httpx.HTTPError, ValueError):
+        raise HTTPException(
+            status_code=503,
+            detail="Jenkins demo job unavailable or could not retrieve logs. Start the local demo services and retry.",
+        ) from None
 
 
 @app.get("/health", response_model=HealthResponse, tags=["system"])

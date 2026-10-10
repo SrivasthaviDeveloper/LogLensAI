@@ -135,6 +135,27 @@ def fetch_diagnostic(
         ) from None
 
 
+def fetch_investigation(
+    incident: dict[str, str], base_url: str | None = None
+) -> dict[str, Any]:
+    """Submit an incident to LogLensAI, which queries the separate simulator."""
+    try:
+        response = httpx.post(
+            f"{resolve_api_base_url(base_url)}/investigate",
+            json=incident,
+            timeout=8.0,
+        )
+        payload = response.json()
+        if response.status_code != 200:
+            detail = payload.get("detail", "Investigation could not be completed.")
+            raise ApiConnectionError(str(detail))
+        return payload
+    except (httpx.HTTPError, ValueError):
+        raise ApiConnectionError(
+            "Could not reach the investigation service. Check that both local services are running."
+        ) from None
+
+
 def _category_label(category: ErrorCategory | None) -> str:
     labels = {
         ErrorCategory.CREDENTIAL_MISMATCH: "Credential mismatch",
@@ -153,12 +174,12 @@ def _application_names() -> list[str]:
             return list(applications)
     except (OSError, json.JSONDecodeError):
         pass
-    return ["Other"]
+    return ["OrderHub", "IPSM", "ESP", "VNSP"]
 
 
 def _render_dashboard() -> None:
     st.set_page_config(
-        page_title="VNSP Intelligent Troubleshooter",
+        page_title="LogLensAI · Provisioning Troubleshooter",
         page_icon=None,
         layout="wide",
         initial_sidebar_state="expanded",
@@ -216,7 +237,7 @@ def _render_dashboard() -> None:
         """
         <header class="hero">
           <p class="hero-kicker">LOCAL OPERATIONS DEMO</p>
-          <h1 id="troubleshooter-title" class="hero-title">VNSP Intelligent Troubleshooter</h1>
+          <h1 id="troubleshooter-title" class="hero-title">LogLensAI Provisioning Troubleshooter</h1>
           <p class="hero-copy">Review simulated service incidents, likely causes, and the log evidence behind each diagnosis.</p>
         </header>
         """,
@@ -224,11 +245,12 @@ def _render_dashboard() -> None:
     )
 
     st.subheader("Incident intake")
-    st.caption("Enter the action and full error log message. This local heuristic summarizes common patterns; it does not send the message to the demo API.")
+    st.caption("Submit the application and error to trace the matching fictional order path and inspect its request/response evidence.")
     with st.form("incident_intake", clear_on_submit=False):
         app_col, error_col = st.columns(2)
         with app_col:
-            application_name = st.selectbox("Application Name", _application_names())
+            app_names = list(dict.fromkeys(["OrderHub", "IPSM", "ESP", *_application_names()]))
+            application_name = st.selectbox("Application Name", app_names)
         with error_col:
             action_name = st.text_input("Action Name", placeholder="e.g. CreateSubscription")
         log_message = st.text_area(
@@ -252,40 +274,79 @@ def _render_dashboard() -> None:
         analyze_incident = st.form_submit_button("Analyze incident", type="primary")
 
     if analyze_incident:
+        st.session_state.pop("investigation_result", None)
         if not action_name.strip() and not log_message.strip():
+            st.session_state.pop("submitted_incident", None)
             st.warning("Enter an action name or a full error log message to analyze.")
         else:
-            st.session_state["incident_intake"] = {
+            st.session_state["submitted_incident"] = {
                 "application": application_name,
-                "action_name": action_name.strip(),
-                "log_message": log_message,
-                "service_name": service_name.strip(),
-                "environment": environment,
-                "correlation_id": correlation_id.strip(),
-                "event_time": event_time.strip(),
+                "error": (log_message.strip() or action_name.strip()),
+                "event_time": event_time.strip() or None,
+                "correlation_id": correlation_id.strip() or None,
             }
 
-    incident = st.session_state.get("incident_intake")
+    incident = st.session_state.get("submitted_incident")
     if incident:
-        st.markdown(f"**Application:** {incident['application']} | **Action:** {incident['action_name'] or 'Not provided'}")
-        advanced_context = [
-            f"Service/component: {incident['service_name']}",
-            f"Environment: {incident['environment']}",
-            f"Request/correlation ID: {incident['correlation_id']}",
-            f"Event time: {incident['event_time']}",
-        ]
-        provided_context = [item for item in advanced_context if not item.endswith(": ") and not item.endswith(": Unspecified")]
-        if provided_context:
-            st.caption(" | ".join(provided_context))
-        explanation, checks = explain_error(f"{incident['action_name']}\n{incident['log_message']}")
-        st.markdown("#### Initial assessment")
-        st.write(explanation)
-        st.markdown("#### Suggested checks")
-        for check in checks:
+        st.markdown(f"**Application:** {incident['application']}")
+        try:
+            if not st.session_state.get("investigation_result"):
+                result = fetch_investigation(incident)
+                st.session_state["investigation_result"] = result
+        except ApiConnectionError as exc:
+            st.error(str(exc))
+
+    result = st.session_state.get("investigation_result")
+    if result:
+        st.markdown("### Investigation findings")
+        st.info("Fictional simulator evidence · read-only · no production hosts or credentials are accessed.")
+        jenkins = result.get("jenkins", {})
+        if jenkins:
+            st.success(
+                f"Jenkins build #{jenkins['build_number']} {jenkins['result']} · "
+                f"{jenkins['authenticated_as']} logged into {jenkins['server_count']} dummy servers · "
+                f"pulled {jenkins['log_count']} reference log entries"
+            )
+            st.caption(
+                f"Job: {jenkins['job']} · Server account: {jenkins['server_authenticated_as']} "
+                f"({jenkins['server_login_method']}) · "
+                f"Log files: {', '.join(jenkins['log_files'])}"
+            )
+        meta = st.columns([1.5, 1, 1, 1])
+        meta[0].metric("Order", result["order"]["id"])
+        meta[1].metric("Type", result["order"]["type"])
+        meta[2].metric("Status", result["order"]["status"])
+        meta[3].metric("Match confidence", result["confidence"].title())
+        st.markdown("#### Call path")
+        st.write(" → ".join(f"{hop['application']} · {hop['microservice']} ({hop['server']})" for hop in result["trace"]))
+        st.markdown("#### Likely explanation")
+        st.write(result["analysis"])
+        st.caption(result["event_time_note"])
+        st.markdown("#### Order API request and response")
+        request_col, response_col = st.columns(2)
+        request_col.json(result["request"])
+        response_col.json(result["response"])
+        st.markdown(f"#### Downstream {result['trace'][1]['application']} request and response")
+        down_req, down_resp = st.columns(2)
+        down_req.json(result["downstream_request"])
+        down_resp.json(result["downstream_response"])
+        with st.expander("Jenkins-pulled dummy server logs"):
+            logs = result.get("logs", [])
+            if logs and isinstance(logs[0], dict):
+                st.dataframe(
+                    pd.DataFrame(logs)[["timestamp", "server", "service", "level", "message"]],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+            elif logs:
+                for line in logs:
+                    st.code(line, language=None)
+            else:
+                st.info("Jenkins authenticated to the dummy hosts but did not find matching reference log entries.")
+        st.markdown("#### Suggested next checks")
+        for check in result["checks"]:
             st.markdown(f"- {check}")
-        if incident["log_message"]:
-            with st.expander("View complete submitted error log message"):
-                st.code(incident["log_message"], language=None)
+    return
 
     api_base_url = resolve_api_base_url()
     with st.sidebar:
