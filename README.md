@@ -40,7 +40,7 @@ flowchart LR
 | `ui.py` | Streamlit dashboard and typed HTTP integration helpers |
 | `app.py` | Separate AWS CloudWatch incident-triage prototype |
 | `config/services.json` | Service catalog consumed by `app.py`; currently placeholders |
-| `tests/` | Diagnostic-engine, FastAPI, and UI-helper tests |
+| `tests/` | Diagnostic-engine, FastAPI, UI-helper, and Streamlit AppTest smoke tests |
 | `requirements.txt` | Runtime and test dependencies |
 | `.env.example` | Secret-free example for the API base URL; not auto-loaded |
 | `.gitignore` | Excludes local environments, caches, secrets, and editor files |
@@ -54,7 +54,7 @@ flowchart LR
 - Pydantic validates scenario inputs and API/result data.
 - Streamlit renders the browser dashboard; HTTPX calls the API; pandas displays the returned log table.
 - `boto3` is used by `app.py` for CloudWatch. It is not used by the local `ui.py` + FastAPI demo.
-- pytest and FastAPI `TestClient` exercise diagnostic logic, API routes, and UI HTTP helper functions; HTTPX `MockTransport` isolates UI helper tests from live network services.
+- pytest, FastAPI `TestClient`, and Streamlit `AppTest` exercise diagnostic logic, API routes, UI HTTP helpers, and dashboard rendering; HTTPX `MockTransport` isolates UI helper tests from live network services.
 - Git is used for version control. The existing remote is hosted on GitHub.
 
 These dependencies are declared in `requirements.txt`. There is no `pyproject.toml`, lock file, automatic `.env` loader, or configured linter in the repository.
@@ -124,6 +124,12 @@ Focused engine and UI-helper tests:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q tests\test_diagnostics.py tests\test_ui.py
+```
+
+Run the Streamlit dashboard smoke test without starting a browser or the app server:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q tests\test_ui_smoke.py
 ```
 
 Compile check:
