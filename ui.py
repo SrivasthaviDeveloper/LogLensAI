@@ -178,6 +178,7 @@ def _render_dashboard() -> None:
                        letter-spacing: .15em; margin: 0 0 .45rem 0; }
         .hero-title { display: block; color: #ffffff !important; font-size: clamp(2.15rem, 4vw, 3rem);
                       font-weight: 800; line-height: 1.12; letter-spacing: -0.035em;
+                      font-family: "Aptos Display", "Segoe UI Variable Display", "Trebuchet MS", sans-serif;
                       margin: .15rem 0 .35rem; text-shadow: 0 2px 12px rgba(0, 0, 0, .28); }
         .hero-copy { color: #d2e2eb; font-size: 1rem; margin: .6rem 0 0 0; }
         [data-testid="stSidebar"] { background: #e8eef4; border-right: 1px solid #d5dfe8; }
