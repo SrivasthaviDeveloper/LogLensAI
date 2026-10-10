@@ -55,29 +55,62 @@ def test_fetch_scenarios_parses_backend_response():
     assert scenarios.scenarios[0].scenario_id == "REQ-1001"
 
 
-def test_fetch_diagnostic_uses_backend_and_validates_result():
+@pytest.mark.parametrize(
+    ("request_id", "category"),
+    [
+        ("REQ-1001", "credential_mismatch"),
+        ("REQ-1002", "request_timeout"),
+        ("REQ-9999", "unknown_error"),
+    ],
+)
+def test_fetch_diagnostic_uses_backend_and_validates_result(request_id, category):
     def handler(request: httpx.Request) -> httpx.Response:
-        assert request.url.path == "/diagnostics/REQ-1001"
+        assert request.url.path == f"/diagnostics/{request_id}"
         return httpx.Response(
             200,
             json={
-                "scenario_id": "REQ-1001",
+                "scenario_id": request_id,
                 "status": "diagnosed",
-                "category": "credential_mismatch",
-                "title": "Simulated mismatch",
-                "probable_root_cause": "Fabricated audience mismatch.",
-                "recommended_steps": ["Compare demo audience settings."],
+                "category": category,
+                "title": f"Simulated scenario {request_id}",
+                "probable_root_cause": f"Fabricated cause for {request_id}.",
+                "recommended_steps": [f"Inspect fabricated evidence for {request_id}."],
                 "logs": [],
                 "message": "Fabricated scenario analyzed successfully.",
             },
         )
 
     result = fetch_diagnostic(
-        "REQ-1001", "http://demo.test", transport=httpx.MockTransport(handler)
+        request_id, "http://demo.test", transport=httpx.MockTransport(handler)
     )
 
     assert result.status == DiagnosticStatus.DIAGNOSED
-    assert result.probable_root_cause == "Fabricated audience mismatch."
+    assert result.scenario_id == request_id
+    assert result.category.value == category
+    assert result.probable_root_cause == f"Fabricated cause for {request_id}."
+
+
+def test_fetch_diagnostic_preserves_structured_not_found_response():
+    transport = httpx.MockTransport(
+        lambda request: httpx.Response(
+            404,
+            json={
+                "scenario_id": "REQ-8888",
+                "status": "not_found",
+                "category": None,
+                "title": None,
+                "probable_root_cause": None,
+                "recommended_steps": [],
+                "logs": [],
+                "message": "No fabricated scenario is available for REQ-8888.",
+            },
+        )
+    )
+
+    result = fetch_diagnostic("REQ-8888", "http://demo.test", transport=transport)
+
+    assert result.status == DiagnosticStatus.NOT_FOUND
+    assert result.scenario_id == "REQ-8888"
 
 
 def test_connection_failure_is_user_friendly_and_hides_transport_details():

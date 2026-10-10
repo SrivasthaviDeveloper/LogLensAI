@@ -1,10 +1,32 @@
+# Python environments
 .venv/
 venv/
-__pycache__/
-*.py[cod]
-.env
+env/
+.env/
 .env.*
 !.env.example
+
+# Python bytecode and test/build artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+build/
+dist/
+*.egg-info/
+
+# Editor and OS-local files
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# Cloud credentials and logs
 .aws/
 *.log
 .streamlit/secrets.toml
