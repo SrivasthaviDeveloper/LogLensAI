@@ -176,8 +176,8 @@ def _render_dashboard() -> None:
                 margin-bottom: 1.5rem; box-shadow: 0 12px 30px rgba(18, 41, 61, .14); }
         .hero-kicker { color: #ffd166; font-size: .72rem; font-weight: 800;
                        letter-spacing: .15em; margin: 0 0 .45rem 0; }
-        #troubleshooter-title { display: block; color: #ffffff !important;
-                      -webkit-text-fill-color: #ffffff; font-size: clamp(2.15rem, 4vw, 3rem);
+        #troubleshooter-title { display: block; color: #FFFFFF !important;
+                      -webkit-text-fill-color: #FFFFFF; font-size: clamp(2.15rem, 4vw, 3rem);
                       font-weight: 700; line-height: 1.12; letter-spacing: -0.025em;
                       font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif;
                       margin: .15rem 0 .35rem; text-shadow: 0 2px 12px rgba(0, 0, 0, .28); }
