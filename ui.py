@@ -167,23 +167,46 @@ def _render_dashboard() -> None:
         """
         <style>
         :root { color-scheme: light; }
-        .stApp { background: #f4f7fb; color: #172b4d; }
-        .block-container { max-width: 1440px; padding-top: 1.8rem; padding-bottom: 3rem; }
-        h1, h2, h3 { color: #142b4a; letter-spacing: -0.02em; }
-        .hero { background: #ffffff; border: 1px solid #dce4ef; border-radius: 14px;
-                padding: 1.35rem 1.6rem; margin-bottom: 1rem; }
-        .hero-kicker { color: #2563a6; font-size: .72rem; font-weight: 700;
-                       letter-spacing: .12em; margin: 0 0 .35rem 0; }
-        .hero-title { color: #142b4a; font-size: 1.8rem; font-weight: 700;
-                      line-height: 1.2; margin: 0; }
-        .hero-copy { color: #52647a; font-size: .98rem; margin: .55rem 0 0 0; }
-        [data-testid="stMetric"] { background: #ffffff; border: 1px solid #dce4ef;
-            border-radius: 12px; padding: .9rem 1rem; }
-        [data-testid="stMetricLabel"] { color: #52647a; }
-        [data-testid="stMetricValue"] { color: #142b4a; }
-        .section-note { color: #52647a; font-size: .9rem; margin-top: -.5rem; }
-        div.stButton > button[kind="primary"] { background: #1769aa; border-color: #1769aa; }
-        div.stButton > button[kind="primary"]:hover { background: #10578f; border-color: #10578f; }
+        .stApp { background: #f2f7fc; color: #2d4052; }
+        .block-container { max-width: 1440px; padding-top: 1.5rem; padding-bottom: 3rem; }
+        h1, h2, h3 { color: #29445c; letter-spacing: -0.025em; }
+        h2 { margin-top: 1.15rem; }
+        .hero { background: linear-gradient(118deg, #31536e 0%, #3e6682 65%, #4e7792 100%);
+                border: 1px solid #3c617c; border-radius: 18px; padding: 1.7rem 1.9rem;
+                margin-bottom: 1.5rem; box-shadow: 0 10px 24px rgba(43, 67, 87, .10); }
+        .hero-kicker { color: #d7eaf7; font-size: .72rem; font-weight: 800;
+                       letter-spacing: .15em; margin: 0 0 .45rem 0; }
+        #troubleshooter-title { display: block; color: #FFFFFF !important;
+                      -webkit-text-fill-color: #FFFFFF; font-size: clamp(2.15rem, 4vw, 3rem);
+                      font-weight: 700; line-height: 1.12; letter-spacing: -0.025em;
+                      font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif;
+                      margin: .15rem 0 .35rem; text-shadow: 0 2px 12px rgba(0, 0, 0, .28); }
+        .hero-copy { color: #e5f0f7; font-size: 1rem; margin: .6rem 0 0 0; }
+        [data-testid="stSidebar"] { background: #e7f0f8; border-right: 1px solid #d3e1ed; }
+        [data-testid="stMetric"] { background: #ffffff; border: 1px solid #d5e2ed;
+            border-top: 3px solid #83b3d2; border-radius: 12px; padding: .9rem 1rem;
+            box-shadow: 0 4px 14px rgba(43, 67, 87, .035); }
+        [data-testid="stMetricLabel"] { color: #5a7083; }
+        [data-testid="stMetricValue"] { color: #29445c; }
+        [data-testid="stForm"] { background: #ffffff; border: 1px solid #d5e2ed;
+            border-radius: 16px; padding: 1.2rem 1.3rem 1rem; box-shadow: 0 8px 24px rgba(43, 67, 87, .045); }
+        [data-testid="stWidgetLabel"] p { color: #3e566d; font-weight: 600; }
+        [data-baseweb="input"] > div, [data-baseweb="select"] > div,
+        [data-baseweb="textarea"] { background: #fbfdff; border-color: #d0dfeb; border-radius: 9px; }
+        [data-baseweb="input"]:focus-within > div, [data-baseweb="select"]:focus-within > div,
+        [data-baseweb="textarea"]:focus-within { border-color: #4d88b4; box-shadow: 0 0 0 1px #4d88b4; }
+        [data-testid="stExpander"] { background: #f3f8fc; border: 1px solid #d5e2ed; border-radius: 10px; }
+        .section-note { color: #5a7083; font-size: .9rem; margin-top: -.5rem; }
+        div.stButton > button[kind="primary"] { background: #3f7298; border: 1px solid #3f7298;
+            border-radius: 9px; color: #ffffff; font-weight: 700; min-height: 2.7rem; }
+        div.stButton > button[kind="primary"]:hover { background: #345f80; border-color: #345f80; }
+        div.stButton > button:focus { box-shadow: 0 0 0 3px rgba(77, 136, 180, .28); }
+        [data-testid="stAlert"] { border-radius: 10px; }
+        @media (max-width: 700px) {
+            .block-container { padding-top: 1rem; }
+            .hero { padding: 1.3rem; }
+            #troubleshooter-title { font-size: 2rem; }
+        }
         </style>
         """,
         unsafe_allow_html=True,
@@ -193,7 +216,7 @@ def _render_dashboard() -> None:
         """
         <header class="hero">
           <p class="hero-kicker">LOCAL OPERATIONS DEMO</p>
-          <h1 class="hero-title">VNSP Intelligent Troubleshooter</h1>
+          <h1 id="troubleshooter-title" class="hero-title">VNSP Intelligent Troubleshooter</h1>
           <p class="hero-copy">Review simulated service incidents, likely causes, and the log evidence behind each diagnosis.</p>
         </header>
         """,
